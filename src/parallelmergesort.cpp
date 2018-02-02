@@ -55,7 +55,7 @@ namespace {
     /*!
         ソートする配列の要素数の最初の数
     */
-    static auto constexpr N = 50;
+    static auto constexpr N = 100000000;
 
     //! A global variable (constant).
     /*!
@@ -91,7 +91,7 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    void merge_sort_cilk(RandomIter first, RandomIter last, std::int32_t reci)
+    void merge_sort_cilk(RandomIter first, RandomIter last, std::int32_t threshold, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -105,14 +105,14 @@ namespace {
         reci++;
 
         // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        if (reci <= threshold) {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
-            cilk_spawn merge_sort_cilk(first, middle, reci);
+            cilk_spawn merge_sort_cilk(first, middle, threshold, reci);
 
             // 上部をソート（別スレッドで実行）
-            cilk_spawn merge_sort_cilk(middle, last, reci);
+            cilk_spawn merge_sort_cilk(middle, last, threshold, reci);
 
             // 二つのスレッドの終了を待機
             cilk_sync;
@@ -132,10 +132,10 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_cilk(RandomIter first, RandomIter last)
+    inline void merge_sort_cilk(RandomIter first, RandomIter last, std::int32_t threshold)
     {
         // 並列化ありの並列マージソートの関数を呼び出す
-        merge_sort_cilk(first, last, 0);
+        merge_sort_cilk(first, last, threshold, 0);
     }
 #endif
 
@@ -148,7 +148,7 @@ namespace {
         \param last 範囲の上限
         \param reci 現在の再帰の深さ
     */
-    void merge_sort_openmp(RandomIter first, RandomIter last, std::int32_t reci)
+    void merge_sort_openmp(RandomIter first, RandomIter last, std::int32_t threshold, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -162,18 +162,18 @@ namespace {
         reci++;
 
         // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        if (reci <= threshold) {
             auto middle = first + len / 2;
 
             // 次の関数をタスクとして実行
 #pragma omp task
             // 下部をソート
-            merge_sort_openmp(first, middle, reci);
+            merge_sort_openmp(first, middle, threshold, reci);
 
             // 次の関数をタスクとして実行
 #pragma omp task
             // 上部をソート
-            merge_sort_openmp(middle, last, reci);
+            merge_sort_openmp(middle, last, threshold, reci);
 
             // 二つのタスクの終了を待機
 #pragma omp taskwait
@@ -193,12 +193,12 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_openmp(RandomIter first, RandomIter last)
+    inline void merge_sort_openmp(RandomIter first, RandomIter last, std::int32_t threshold)
     {
 #pragma omp parallel    // OpenMP並列領域の始まり
 #pragma omp single      // task句はsingle領域で実行
         // 並列マージソートの関数を呼び出す
-        merge_sort_openmp(first, last, 0);
+        merge_sort_openmp(first, last, threshold, 0);
     }
 #endif
 
@@ -209,7 +209,7 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    void merge_sort_tbb(RandomIter first, RandomIter last, std::int32_t reci)
+    void merge_sort_tbb(RandomIter first, RandomIter last, std::int32_t threshold, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -223,15 +223,15 @@ namespace {
         reci++;
 
         // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        if (reci <= threshold) {
             auto middle = first + len / 2;
 
             // 二つのラムダ式を別スレッドで実行
             tbb::parallel_invoke(
                 // 下部をソート
-                [first, middle, reci]() { merge_sort_tbb(first, middle, reci); },
+                [first, middle, threshold, reci]() { merge_sort_tbb(first, middle, threshold, reci); },
                 // 上部をソート
-                [middle, last, reci]() { merge_sort_tbb(middle, last, reci); });
+                [middle, last, threshold, reci]() { merge_sort_tbb(middle, last, threshold, reci); });
 
             std::inplace_merge(first, middle, last);
         }
@@ -248,10 +248,10 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_tbb(RandomIter first, RandomIter last)
+    inline void merge_sort_tbb(RandomIter first, RandomIter last, std::int32_t threshold)
     {
         // 並列化ありの並列マージソートの関数を呼び出す
-        merge_sort_tbb(first, last, 0);
+        merge_sort_tbb(first, last, threshold, 0);
     }
 
     template < class RandomIter >
@@ -261,7 +261,7 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    void merge_sort_thread(RandomIter first, RandomIter last, std::int32_t reci)
+    void merge_sort_thread(RandomIter first, RandomIter last, std::int32_t threshold, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -275,14 +275,14 @@ namespace {
         reci++;
 
         // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        if (reci <= threshold) {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
-            auto th1 = std::thread([first, middle, reci]() { merge_sort_thread(first, middle, reci); });
+            auto th1 = std::thread([first, middle, threshold, reci]() { merge_sort_thread(first, middle, threshold, reci); });
 
             // 上部をソート（別スレッドで実行）
-            auto th2 = std::thread([middle, last, reci]() { merge_sort_thread(middle, last, reci); });
+            auto th2 = std::thread([middle, last, threshold, reci]() { merge_sort_thread(middle, last, threshold, reci); });
 
             // 二つのスレッドの終了を待機
             th1.join();
@@ -303,10 +303,10 @@ namespace {
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_thread(RandomIter first, RandomIter last)
+    inline void merge_sort_thread(RandomIter first, RandomIter last, std::int32_t threshold)
     {
         // 並列化ありの並列マージソートの関数を呼び出す
-        merge_sort_thread(first, last, 0);
+        merge_sort_thread(first, last, threshold, 0);
     }
 
 #ifdef DEBUG
@@ -345,47 +345,50 @@ int main()
 namespace {
     void check_performance(Checktype checktype, std::ofstream & ofs)
     {
-        ofs << "配列の要素数,std::stable_sort,マージソート,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallelism TS)\n";
+        ofs << "配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallelism TS)\n";
 
         // ランダムデバイス
         std::random_device rnd;
 
+        // 乱数エンジン
+        auto randengine = std::mt19937(rnd());
+
         auto n = N;
-        for (auto i = 0; i < 6; i++) {
-            for (auto j = 0; j < 2; j++) {
-                std::cout << n << "個を計測中\n";
-                                
-                // 乱数エンジン
-                auto randengine = std::mt19937(rnd());
+        
+        std::uniform_int_distribution<std::int32_t> const distribution(1, n / 10);
+        
+        std::cout << "配列の要素数" << n << "個\n";
+        //for (auto i = 0; i < 6; i++) {
+        //    for (auto j = 0; j < 2; j++) {
+        //        std::cout << n << "個を計測中\n";
+        for (auto threshold = 0; threshold < 13; threshold++) {
+            std::cout << "再帰数" << threshold << "を計測中…\n";
+        //        ofs << n << ',';
+            ofs << threshold << ',';
 
-                std::uniform_int_distribution<std::int32_t> const distribution(1, n / 10);
-
-                ofs << n << ',';
-
-                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_thread(vec.begin(), vec.end()); }, n, ofs, randengine);
+                //elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [threshold](auto & vec) { merge_sort_thread(vec.begin(), vec.end(), threshold); }, n, ofs, randengine);
 
 #if _OPENMP >= 200805
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_openmp(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [threshold](auto & vec) { merge_sort_openmp(vec.begin(), vec.end(), threshold); }, n, ofs, randengine);
 #endif
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_tbb(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [threshold](auto & vec) { merge_sort_tbb(vec.begin(), vec.end(), threshold); }, n, ofs, randengine);
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_cilk(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [threshold](auto & vec) { merge_sort_cilk(vec.begin(), vec.end(), threshold); }, n, ofs, randengine);
 #endif
 
 #if __INTEL_COMPILER >= 18
-                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(std::execution::par, vec.begin(), vec.end()); }, n, ofs, randengine);
+                //elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(std::execution::par, vec.begin(), vec.end()); }, n, ofs, randengine);
 #endif
                 ofs << std::endl;
 
-                if (!j) {
-                    n *= 2;
-                }
-            }
+//                if (!j) {
+//                    n *= 2;
+//                }
+//            }
 
-            n *= 5;
+//            n *= 5;
         }
     }
 
@@ -393,12 +396,12 @@ namespace {
     {
         using namespace std::chrono;
 
-        std::vector<mypair> vec(n), vecback;
+        std::vector<mypair> vec(n);
 
         auto elapsed_time = 0.0;
         for (auto i = 1; i <= CHECKLOOP; i++) {
-            for (auto && elem : vec) {
-                elem = std::make_pair(distribution(randengine), i);
+            for (auto j = 0; j < n; j++) {
+                vec[j] = std::make_pair(distribution(randengine), j);
             }
 
             switch (checktype) {
@@ -407,7 +410,7 @@ namespace {
 
             case Checktype::SORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vec.begin(), vec.end());
+                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.end());
 #else
                 std::stable_sort(vec.begin(), vec.end());
 #endif
@@ -415,7 +418,7 @@ namespace {
 
             case Checktype::QUARTERSORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vec.begin(), vec.begin() + n / 4);
+                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.begin() + n / 4);
 #else
                 std::stable_sort(vec.begin(), vec.begin() + n / 4);
 #endif
@@ -424,16 +427,6 @@ namespace {
             default:
                 BOOST_ASSERT(!"switchのdefaultに来てしまった！");
                 break;
-            }
-
-            if (i == CHECKLOOP) {
-                vecback = vec;
-
-#if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vecback.begin(), vecback.end());
-#else
-                std::stable_sort(vecback.begin(), vecback.end());
-#endif
             }
 
             auto beg = high_resolution_clock::now();
@@ -446,6 +439,14 @@ namespace {
         ofs << boost::format("%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
 
 #ifdef DEBUG
+        std::vector<mypair> vecback(vec);
+
+#if __INTEL_COMPILER >= 18
+        std::stable_sort(std::execution::par_unseq, vecback.begin(), vecback.end());
+#else
+        std::stable_sort(vecback.begin(), vecback.end());
+#endif
+
         if (!vec_check(vec, vecback)) {
             std::cerr << "エラー発見！" << std::endl;
         }
