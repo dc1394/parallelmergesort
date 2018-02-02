@@ -3,13 +3,11 @@
 #include <chrono>					// for std::chrono
 #include <cstdint>					// for std::int32_t
 #include <fstream>					// for std::ofstream
-#include <iostream>					// for std::cout
+#include <iostream>					// for std::cout, std::cerr
 #include <iterator>                 // for std::distance
 #include <random>					// for std::mt19937, std::random_device
-#include <string>					// for std::string
 #include <thread>					// for std::thread
-#include <tuple>					// for std::tie
-#include <utility>					// for std::make_pair, std::move. std::pair
+#include <utility>					// for std::make_pair, std::pair
 #include <vector>					// for std::vector
 
 #if __INTEL_COMPILER >= 18
@@ -28,7 +26,11 @@
 #include <tbb/parallel_invoke.h>	// for tbb::parallel_invoke
 
 namespace {
+    // #region 型エイリアス
+
     using mypair = std::pair<std::int32_t, std::int32_t>;
+
+    // #endregion 型エイリアス
 
     //! A enumerated type
     /*!
@@ -55,13 +57,13 @@ namespace {
     /*!
         ソートする配列の要素数の最初の数
     */
-    static auto constexpr N = 50;
+    static auto constexpr N = 100;
 
     //! A global variable (constant).
     /*!
-        実行するCPUの物理コア数
+        再帰するかどうかの閾値
     */
-    static std::int32_t const NUMPHYSICALCORE = boost::thread::physical_concurrency();
+    static auto const THRESHOLD = 3;
         
     //! A function.
     /*!
@@ -90,6 +92,7 @@ namespace {
         指定された範囲の要素をマージソートでソートする
         \param first 範囲の下限
         \param last 範囲の上限
+        \param reci 現在の再帰の深さ
     */
     void merge_sort_cilk(RandomIter first, RandomIter last, std::int32_t reci)
     {
@@ -104,8 +107,8 @@ namespace {
         // 再帰の深さ + 1
         reci++;
 
-        // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        // 現在の再帰の深さが閾値以下のときだけ並列化させる
+        if (reci <= THRESHOLD) {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
@@ -120,7 +123,7 @@ namespace {
             std::inplace_merge(first, middle, last);
         }
         else {
-            // 並列化なしのマージソートの関数を呼び出す
+            // C++標準の安定ソートの関数を呼び出す
             std::stable_sort(first, last);
         }
     }
@@ -134,7 +137,7 @@ namespace {
     */
     inline void merge_sort_cilk(RandomIter first, RandomIter last)
     {
-        // 並列化ありの並列マージソートの関数を呼び出す
+        // 再帰ありの並列安定ソートの関数を呼び出す
         merge_sort_cilk(first, last, 0);
     }
 #endif
@@ -161,8 +164,8 @@ namespace {
         // 再帰の深さ + 1
         reci++;
 
-        // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        // 現在の再帰の深さが閾値以下のときだけ並列化させる
+        if (reci <= THRESHOLD) {
             auto middle = first + len / 2;
 
             // 次の関数をタスクとして実行
@@ -181,7 +184,7 @@ namespace {
             std::inplace_merge(first, middle, last);
         }
         else {
-            // 並列化なしのマージソートの関数を呼び出す
+            // C++標準の安定ソートの関数を呼び出す
             std::stable_sort(first, last);
         }
     }
@@ -197,7 +200,7 @@ namespace {
     {
 #pragma omp parallel    // OpenMP並列領域の始まり
 #pragma omp single      // task句はsingle領域で実行
-        // 並列マージソートの関数を呼び出す
+        // 再帰ありの並列安定ソートの関数を呼び出す
         merge_sort_openmp(first, last, 0);
     }
 #endif
@@ -208,6 +211,7 @@ namespace {
         指定された範囲の要素をマージソートでソートする
         \param first 範囲の下限
         \param last 範囲の上限
+        \param reci 現在の再帰の深さ
     */
     void merge_sort_tbb(RandomIter first, RandomIter last, std::int32_t reci)
     {
@@ -222,8 +226,8 @@ namespace {
         // 再帰の深さ + 1
         reci++;
 
-        // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        // 現在の再帰の深さが閾値以下のときだけ並列化させる
+        if (reci <= THRESHOLD) {
             auto middle = first + len / 2;
 
             // 二つのラムダ式を別スレッドで実行
@@ -236,7 +240,7 @@ namespace {
             std::inplace_merge(first, middle, last);
         }
         else {
-            // 並列化なしのマージソートの関数を呼び出す
+            // C++標準の安定ソートの関数を呼び出す
             std::stable_sort(first, last);
         }
     }
@@ -250,7 +254,7 @@ namespace {
     */
     inline void merge_sort_tbb(RandomIter first, RandomIter last)
     {
-        // 並列化ありの並列マージソートの関数を呼び出す
+        // 再帰ありの並列安定ソートの関数を呼び出す
         merge_sort_tbb(first, last, 0);
     }
 
@@ -260,6 +264,7 @@ namespace {
         指定された範囲の要素をマージソートでソートする
         \param first 範囲の下限
         \param last 範囲の上限
+        \param reci 現在の再帰の深さ
     */
     void merge_sort_thread(RandomIter first, RandomIter last, std::int32_t reci)
     {
@@ -274,8 +279,8 @@ namespace {
         // 再帰の深さ + 1
         reci++;
 
-        // 現在の再帰の深さが物理コア数以下のときだけ並列化させる
-        if (reci <= NUMPHYSICALCORE) {
+        // 現在の再帰の深さが閾値以下のときだけ並列化させる
+        if (reci <= THRESHOLD) {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
@@ -291,7 +296,7 @@ namespace {
             std::inplace_merge(first, middle, last);
         }
         else {
-            // 並列化なしのマージソートの関数を呼び出す
+            // C++標準の安定ソートの関数を呼び出す
             std::stable_sort(first, last);
         }
     }
@@ -305,7 +310,7 @@ namespace {
     */
     inline void merge_sort_thread(RandomIter first, RandomIter last)
     {
-        // 並列化ありの並列マージソートの関数を呼び出す
+        // 再帰ありの並列安定ソートの関数を呼び出す
         merge_sort_thread(first, last, 0);
     }
 
@@ -349,21 +354,20 @@ namespace {
 
         // ランダムデバイス
         std::random_device rnd;
+        
+        // 乱数エンジン
+        auto randengine = std::mt19937(rnd());
 
         auto n = N;
         for (auto i = 0; i < 6; i++) {
             for (auto j = 0; j < 2; j++) {
-                std::cout << n << "個を計測中\n";
-                                
-                // 乱数エンジン
-                auto randengine = std::mt19937(rnd());
+                std::cout << n << "個を計測中...\n";
 
                 std::uniform_int_distribution<std::int32_t> const distribution(1, n / 10);
 
                 ofs << n << ',';
 
                 elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
                 elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_thread(vec.begin(), vec.end()); }, n, ofs, randengine);
 
 #if _OPENMP >= 200805
@@ -381,11 +385,11 @@ namespace {
                 ofs << std::endl;
 
                 if (!j) {
-                    n *= 2;
+                    n *= 5;
                 }
             }
 
-            n *= 5;
+            n *= 2;
         }
     }
 
@@ -393,12 +397,12 @@ namespace {
     {
         using namespace std::chrono;
 
-        std::vector<mypair> vec(n), vecback;
+        std::vector<mypair> vec(n);
 
         auto elapsed_time = 0.0;
         for (auto i = 1; i <= CHECKLOOP; i++) {
-            for (auto && elem : vec) {
-                elem = std::make_pair(distribution(randengine), i);
+            for (auto j = 0; j < n; j++) {
+                vec[j] = std::make_pair(distribution(randengine), j);
             }
 
             switch (checktype) {
@@ -407,7 +411,7 @@ namespace {
 
             case Checktype::SORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vec.begin(), vec.end());
+                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.end());
 #else
                 std::stable_sort(vec.begin(), vec.end());
 #endif
@@ -415,7 +419,7 @@ namespace {
 
             case Checktype::QUARTERSORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vec.begin(), vec.begin() + n / 4);
+                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.begin() + n / 4);
 #else
                 std::stable_sort(vec.begin(), vec.begin() + n / 4);
 #endif
@@ -425,17 +429,7 @@ namespace {
                 BOOST_ASSERT(!"switchのdefaultに来てしまった！");
                 break;
             }
-
-            if (i == CHECKLOOP) {
-                vecback = vec;
-
-#if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par, vecback.begin(), vecback.end());
-#else
-                std::stable_sort(vecback.begin(), vecback.end());
-#endif
-            }
-
+            
             auto beg = high_resolution_clock::now();
             func(vec);
             auto end = high_resolution_clock::now();
@@ -445,7 +439,16 @@ namespace {
 
         ofs << boost::format("%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
 
+
 #ifdef DEBUG
+        std::vector<mypair> vecback(vec);
+
+#if __INTEL_COMPILER >= 18
+            std::stable_sort(std::execution::par_unseq, vecback.begin(), vecback.end());
+#else
+            std::stable_sort(vecback.begin(), vecback.end());
+#endif
+
         if (!vec_check(vec, vecback)) {
             std::cerr << "エラー発見！" << std::endl;
         }
