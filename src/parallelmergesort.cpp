@@ -1,5 +1,4 @@
-﻿#include <algorithm>				// for std::partition, std::shuffle, std::sort
-#include <array>					// for std::array
+﻿#include <algorithm>				// for std::inplace_merge, std::stable_sort
 #include <chrono>					// for std::chrono
 #include <cstdint>					// for std::int32_t
 #include <fstream>					// for std::ofstream
@@ -17,7 +16,7 @@
 
 #include <boost/assert.hpp>			// for boost::assert
 #include <boost/format.hpp>			// for boost::format
-#include <boost/thread.hpp>			// for boost::thread::physical_concurrency
+#include <boost/thread.hpp>         // for boost::thread::physical_concurrency
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
 #include <cilk/cilk.h>				// for cilk_spawn, cilk_sync
@@ -350,7 +349,7 @@ int main()
 namespace {
     void check_performance(Checktype checktype, std::ofstream & ofs)
     {
-        ofs << "配列の要素数,std::stable_sort,マージソート,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallelism TS)\n";
+        ofs << "配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallelism TS)\n";
 
         // ランダムデバイス
         std::random_device rnd;
@@ -359,7 +358,7 @@ namespace {
         auto randengine = std::mt19937(rnd());
 
         auto n = N;
-        for (auto i = 0; i < 6; i++) {
+        for (auto i = 0; i < 7; i++) {
             for (auto j = 0; j < 2; j++) {
                 std::cout << n << "個を計測中...\n";
 
@@ -384,7 +383,10 @@ namespace {
 #endif
                 ofs << std::endl;
 
-                if (!j) {
+                if (i == 6) {
+                    break;
+                }
+                else if (!j) {
                     n *= 5;
                 }
             }
@@ -430,9 +432,9 @@ namespace {
                 break;
             }
             
-            auto beg = high_resolution_clock::now();
+            auto const beg = high_resolution_clock::now();
             func(vec);
-            auto end = high_resolution_clock::now();
+            auto const end = high_resolution_clock::now();
 
             elapsed_time += (duration_cast<duration<double>>(end - beg)).count();
         }
