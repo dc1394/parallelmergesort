@@ -82,7 +82,7 @@ namespace {
         \param ofs 出力用のファイルストリーム
         \param randengine 乱数生成エンジン
     */
-    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> const & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine);
+    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine);
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
     template < class RandomIter >
@@ -366,7 +366,7 @@ namespace {
             for (auto j = 0; j < 2; j++) {
                 std::cout << n << "個を計測中...\n";
 
-                std::uniform_int_distribution<std::int32_t> const distribution(1, n / 10);
+                std::uniform_int_distribution<std::int32_t> distribution(1, n / 10);
 
                 ofs << n << ',';
 
@@ -399,7 +399,7 @@ namespace {
         }
     }
 
-    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> const & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine)
+    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine)
     {
         using namespace std::chrono;
 
