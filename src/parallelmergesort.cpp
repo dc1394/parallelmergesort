@@ -88,12 +88,12 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする
+        指定された範囲の要素を安定ソートする
         \param first 範囲の下限
         \param last 範囲の上限
         \param reci 現在の再帰の深さ
     */
-    void merge_sort_cilk(RandomIter first, RandomIter last, std::int32_t reci)
+    void stable_sort_cilk(RandomIter first, RandomIter last, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -111,14 +111,15 @@ namespace {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
-            cilk_spawn merge_sort_cilk(first, middle, reci);
+            cilk_spawn stable_sort_cilk(first, middle, reci);
 
             // 上部をソート（別スレッドで実行）
-            cilk_spawn merge_sort_cilk(middle, last, reci);
+            cilk_spawn stable_sort_cilk(middle, last, reci);
 
             // 二つのスレッドの終了を待機
             cilk_sync;
 
+            // ソートされた下部と上部をマージ
             std::inplace_merge(first, middle, last);
         }
         else {
@@ -130,14 +131,14 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする（Cilkで並列化）
+        指定された範囲の要素を安定ソートする（Cilkで並列化）
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_cilk(RandomIter first, RandomIter last)
+    inline void stable_sort_cilk(RandomIter first, RandomIter last)
     {
         // 再帰ありの並列安定ソートの関数を呼び出す
-        merge_sort_cilk(first, last, 0);
+        stable_sort_cilk(first, last, 0);
     }
 #endif
 
@@ -145,12 +146,12 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする（OpenMPで並列化）
+        指定された範囲の要素を安定ソートする（OpenMPで並列化）
         \param first 範囲の下限
         \param last 範囲の上限
         \param reci 現在の再帰の深さ
     */
-    void merge_sort_openmp(RandomIter first, RandomIter last, std::int32_t reci)
+    void stable_sort_openmp(RandomIter first, RandomIter last, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -170,16 +171,17 @@ namespace {
             // 次の関数をタスクとして実行
 #pragma omp task
             // 下部をソート
-            merge_sort_openmp(first, middle, reci);
+            stable_sort_openmp(first, middle, reci);
 
             // 次の関数をタスクとして実行
 #pragma omp task
             // 上部をソート
-            merge_sort_openmp(middle, last, reci);
+            stable_sort_openmp(middle, last, reci);
 
             // 二つのタスクの終了を待機
 #pragma omp taskwait
 
+            // ソートされた下部と上部をマージ
             std::inplace_merge(first, middle, last);
         }
         else {
@@ -191,28 +193,28 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする（OpenMPで並列化）
+        指定された範囲の要素を安定ソートする（OpenMPで並列化）
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_openmp(RandomIter first, RandomIter last)
+    inline void stable_sort_openmp(RandomIter first, RandomIter last)
     {
 #pragma omp parallel    // OpenMP並列領域の始まり
 #pragma omp single      // task句はsingle領域で実行
         // 再帰ありの並列安定ソートの関数を呼び出す
-        merge_sort_openmp(first, last, 0);
+        stable_sort_openmp(first, last, 0);
     }
 #endif
 
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする
+        指定された範囲の要素を安定ソートする
         \param first 範囲の下限
         \param last 範囲の上限
         \param reci 現在の再帰の深さ
     */
-    void merge_sort_tbb(RandomIter first, RandomIter last, std::int32_t reci)
+    void stable_sort_tbb(RandomIter first, RandomIter last, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -232,10 +234,11 @@ namespace {
             // 二つのラムダ式を別スレッドで実行
             tbb::parallel_invoke(
                 // 下部をソート
-                [first, middle, reci]() { merge_sort_tbb(first, middle, reci); },
+                [first, middle, reci]() { stable_sort_tbb(first, middle, reci); },
                 // 上部をソート
-                [middle, last, reci]() { merge_sort_tbb(middle, last, reci); });
+                [middle, last, reci]() { stable_sort_tbb(middle, last, reci); });
 
+            // ソートされた下部と上部をマージ
             std::inplace_merge(first, middle, last);
         }
         else {
@@ -247,25 +250,25 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする（TBBで並列化）
+        指定された範囲の要素を安定ソートする（TBBで並列化）
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_tbb(RandomIter first, RandomIter last)
+    inline void stable_sort_tbb(RandomIter first, RandomIter last)
     {
         // 再帰ありの並列安定ソートの関数を呼び出す
-        merge_sort_tbb(first, last, 0);
+        stable_sort_tbb(first, last, 0);
     }
 
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする
+        指定された範囲の要素を安定ソートする
         \param first 範囲の下限
         \param last 範囲の上限
         \param reci 現在の再帰の深さ
     */
-    void merge_sort_thread(RandomIter first, RandomIter last, std::int32_t reci)
+    void stable_sort_thread(RandomIter first, RandomIter last, std::int32_t reci)
     {
         // 部分ソートの要素数
         auto const len = std::distance(first, last);
@@ -283,15 +286,16 @@ namespace {
             auto middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
-            auto th1 = std::thread([first, middle, reci]() { merge_sort_thread(first, middle, reci); });
+            auto th1 = std::thread([first, middle, reci]() { stable_sort_thread(first, middle, reci); });
 
             // 上部をソート（別スレッドで実行）
-            auto th2 = std::thread([middle, last, reci]() { merge_sort_thread(middle, last, reci); });
+            auto th2 = std::thread([middle, last, reci]() { stable_sort_thread(middle, last, reci); });
 
             // 二つのスレッドの終了を待機
             th1.join();
             th2.join();
 
+            // ソートされた下部と上部をマージ
             std::inplace_merge(first, middle, last);
         }
         else {
@@ -303,14 +307,14 @@ namespace {
     template < class RandomIter >
     //! A template function.
     /*!
-        指定された範囲の要素をマージソートでソートする（std::threadで並列化）
+        指定された範囲の要素を安定ソートする（std::threadで並列化）
         \param first 範囲の下限
         \param last 範囲の上限
     */
-    inline void merge_sort_thread(RandomIter first, RandomIter last)
+    inline void stable_sort_thread(RandomIter first, RandomIter last)
     {
         // 再帰ありの並列安定ソートの関数を呼び出す
-        merge_sort_thread(first, last, 0);
+        stable_sort_thread(first, last, 0);
     }
 
 #ifdef DEBUG
@@ -367,15 +371,15 @@ namespace {
                 ofs << n << ',';
 
                 elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_thread(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_thread(vec.begin(), vec.end()); }, n, ofs, randengine);
 
 #if _OPENMP >= 200805
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_openmp(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_openmp(vec.begin(), vec.end()); }, n, ofs, randengine);
 #endif
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_tbb(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs, randengine);
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-                elapsed_time(checktype, distribution, [](auto & vec) { merge_sort_cilk(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs, randengine);
 #endif
 
 #if __INTEL_COMPILER >= 18
