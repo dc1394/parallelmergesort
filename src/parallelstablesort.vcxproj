@@ -22,8 +22,9 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{1FFD5DB1-7091-4D31-9AD1-FB99B24AA5A7}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>parallelquicksort</RootNamespace>
+    <RootNamespace>parallelstablesort</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>parallelstablesort</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -160,7 +161,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="parallelmergesort.cpp" />
+    <ClCompile Include="parallelstablesort.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

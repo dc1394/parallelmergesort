@@ -1,22 +1,22 @@
 ﻿================================================================================
-【 ソフト名 】parallelquicksort
+【 ソフト名 】parallelstablesort
 【  作成者  】@dc1394
 ================================================================================
 
 ★これは何？
-　クイックソートを並列化して高速化してみたコードです。ビルドには、以下のライブラ
-　リが必要です。
+　安定ソートを並列化して高速化してみたコードです。ビルドには、以下のライブラリが
+　必要です。
 　・Boost C++ Libraries
 　・Intel® Threading Building Blocks (Intel® TBB)
 
 ★更新履歴
-　2017/12/12 ver.1.0   README.mdを書いて公開。
+　2018/2/11 ver.1.0   README.mdを書いて公開。
 
 ★ライセンス
 　このソフトはフリーソフトウェアです（2条項BSDライセンス）。
 --------------------------------------------------------------------------------
-　parallelquicksort
-　Copyright (C) 2017 @dc1394
+　parallelstablesort
+　Copyright (C) 2018 @dc1394
 
 　ソースコード形式であれバイナリ形式であれ、変更の有無に関わらず、以下の条件を満
 　たす限りにおいて、再配布および利用を許可します。
@@ -37,7 +37,7 @@
 　な損害、特別損害、懲罰的損害または結果損害のいずれに対しても一切責任を負いませ
 　ん。
 
-  Copyright (c) 2017, @dc1394
+  Copyright (c) 2018, @dc1394
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,7 @@
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 --------------------------------------------------------------------------------
 
-  parallelquicksortにはBoostコミュニティによるBoost C++ Librariesを使用してい
+  parallelstablesortにはBoostコミュニティによるBoost C++ Librariesを使用してい
 　ます。こちらのライセンスは Boostライセンス になります。
 
 /* Boost Software License - Version 1.0 - August 17th, 2003
@@ -90,6 +90,6 @@
 * DEALINGS IN THE SOFTWARE.
 */
 
-　parallelquicksortにはIntel CorporationによるIntel® Threading Building
+　parallelstablesortにはIntel CorporationによるIntel® Threading Building
 　Blocks(Intel® TBB)を使用しています。
   こちらのライセンスは GNU General Public License, version 2 になります。

@@ -1,4 +1,11 @@
-﻿#include <algorithm>				// for std::inplace_merge, std::stable_sort
+﻿/*! \file parallelstablesort.cpp
+	\brief スレッド並列化した安定ソートのパフォーマンスをチェックする
+
+	Copyright © 2018 @dc1394 All Rights Reserved.
+	This software is released under the BSD 2-Clause License.
+*/
+
+#include <algorithm>				// for std::inplace_merge, std::stable_sort
 #include <chrono>					// for std::chrono
 #include <cstdint>					// for std::int32_t
 #include <fstream>					// for std::ofstream
