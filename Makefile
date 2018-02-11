@@ -1,8 +1,8 @@
-PROG := parallelmergesort
-SRCS :=	parallelmergesort.cpp
+PROG := parallelstablesort
+SRCS :=	parallelstablesort.cpp
 
-OBJS = parallelmergesort.o
-DEPS = parallelmergesort.d
+OBJS = parallelstablesort.o
+DEPS = parallelstablesort.d
 
 VPATH  = src
 CXX = icpc
