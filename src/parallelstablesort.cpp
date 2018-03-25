@@ -390,7 +390,7 @@ namespace {
 #endif
 
 #if __INTEL_COMPILER >= 18
-                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(std::execution::par, vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(pstl::execution::par, vec.begin(), vec.end()); }, n, ofs, randengine);
 #endif
                 ofs << std::endl;
 
@@ -424,7 +424,7 @@ namespace {
 
             case Checktype::SORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.end());
+                std::stable_sort(pstl::execution::par_unseq, vec.begin(), vec.end());
 #else
                 std::stable_sort(vec.begin(), vec.end());
 #endif
@@ -432,7 +432,7 @@ namespace {
 
             case Checktype::QUARTERSORT:
 #if __INTEL_COMPILER >= 18
-                std::stable_sort(std::execution::par_unseq, vec.begin(), vec.begin() + n / 4);
+                std::stable_sort(pstl::execution::par_unseq, vec.begin(), vec.begin() + n / 4);
 #else
                 std::stable_sort(vec.begin(), vec.begin() + n / 4);
 #endif
@@ -457,7 +457,7 @@ namespace {
         std::vector<mypair> vecback(vec);
 
 #if __INTEL_COMPILER >= 18
-            std::stable_sort(std::execution::par_unseq, vecback.begin(), vecback.end());
+            std::stable_sort(pstl::execution::par_unseq, vecback.begin(), vecback.end());
 #else
             std::stable_sort(vecback.begin(), vecback.end());
 #endif
