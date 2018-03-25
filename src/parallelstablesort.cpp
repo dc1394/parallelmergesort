@@ -474,7 +474,7 @@ namespace {
         auto const size = v1.size();
         BOOST_ASSERT(size == v2.size());
 
-        for (auto i = 0; i < size; i++) {
+        for (auto i = 0UL; i < size; i++) {
             if (v1[i] != v2[i]) {
                 std::cerr << "Error! i = " << i << std::endl;
                 return false;
