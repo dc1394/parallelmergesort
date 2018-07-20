@@ -431,7 +431,7 @@ namespace {
     {
         using namespace std::chrono;
 
-        std::vector<mypair> vec(n);
+        std::vector< mypair > vec(n);
         auto const path = boost::filesystem::current_path() / "makestablesortdata";
 
         switch (checktype) {
@@ -485,6 +485,10 @@ namespace {
             break;
         }
 
+#ifdef DEBUG
+        std::vector< mypair > vecback(vec);
+#endif
+
         auto elapsed_time = 0.0;
         for (auto i = 1; i <= CHECKLOOP; i++) {
             auto const beg = high_resolution_clock::now();
@@ -497,8 +501,6 @@ namespace {
         ofs << boost::format(u8"%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
 
 #ifdef DEBUG
-        std::vector< mypair > vecback(vec);
-
         std::stable_sort(pstl::execution::par_unseq, vecback.begin(), vecback.end());
 
         if (!vec_check(vec, vecback)) {
