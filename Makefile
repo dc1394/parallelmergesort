@@ -29,7 +29,7 @@ $(PROG2): $(OBJS2)
 		$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^
 
 %.o: %.cpp
-		$(CXX) $(CXXFLAGS) -c -MMD -MP -D_DEBUG $<
+	$(CXX) $(CXXFLAGS) -c -MMD -MP -DDEBUG $<
 
 clean:
 		rm -f $(PROG) $(OBJS) $(DEPS)

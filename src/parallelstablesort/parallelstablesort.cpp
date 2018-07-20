@@ -360,7 +360,7 @@ int main()
     std::cout << "\nあらかじめソートされたデータを計測中...\n";
     check_performance(Checktype::SORT, ofssort);
 
-    std::cout << "\n最初の1_4だけソートされたデータを計測中...\n";
+    std::cout << "\n最初の1/4だけソートされたデータを計測中...\n";
     check_performance(Checktype::QUARTERSORT, ofsquartersort);
 
     return 0;
