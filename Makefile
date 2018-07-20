@@ -1,16 +1,23 @@
-PROG := parallelstablesort
-SRCS :=	parallelstablesort.cpp
+PROG  := parallelstablesort
+PROG2 := makestablesortdata
 
-OBJS = parallelstablesort.o
-DEPS = parallelstablesort.d
+SRCS  := parallelstablesort.cpp
+SRCS2 := makestablesortdata.cpp
 
-VPATH  = src
+OBJS  = parallelstablesort.o
+OBJS2 = makestablesortdata.o
+
+DEPS  = parallelstablesort.d
+DEPS2 = makestablesortdata.d
+
+VPATH  = src/parallelstablesort src/makestablesortdata
 CXX = icpc
-CXXFLAGS = -Wall -Wextra -O3 -xCORE-AVX2 -ipo -pipe -std=c++14 -fopenmp
-LDFLAGS = -L/home/dc1394/oss/tbb2018_20171205oss/lib/intel64/gcc4.7 -ltbb \
-		  -L/home/dc1394/oss/boost_1_66_0/stage/icc/lib -lboost_system -lboost_thread
+CXXFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe -std=c++14 -fopenmp
+LDFLAGS = -L/home/dc1394/oss/tbb2018_20180411oss/lib/intel64/gcc4.7 -ltbb \
+		  -L/home/dc1394/oss/boost_1_67_0/stage/icc/lib \
+		  -lboost_filesystem -lboost_serialization -lboost_system -lboost_thread
 
-all: $(PROG) ;
+all: $(PROG) $(PROG2) ;
 #rm -f $(OBJS) $(DEPS)
 
 -include $(DEPS)
@@ -18,8 +25,12 @@ all: $(PROG) ;
 $(PROG): $(OBJS)
 		$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^
 
+$(PROG2): $(OBJS2)
+		$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $@ $^
+
 %.o: %.cpp
 		$(CXX) $(CXXFLAGS) -c -MMD -MP -D_DEBUG $<
 
 clean:
 		rm -f $(PROG) $(OBJS) $(DEPS)
+		rm -f $(PROG2) $(OBJS2) $(DEPS2)
