@@ -23,9 +23,9 @@
 
 #include <boost/archive/text_iarchive.hpp>          // for boost::archive::text_iarchive
 #include <boost/assert.hpp>                         // for boost::assert
-#include <boost/filesystem/path.hpp>                // for boost::filesystem
+#include <boost/filesystem.hpp>                     // for boost::filesystem
 #include <boost/format.hpp>                         // for boost::format
-#include <boost/process.hpp>                        // for boost::process
+//#include <boost/process.hpp>                        // for boost::process
 #include <boost/serialization/serialization.hpp>    // for boost::serialization
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/vector.hpp>
@@ -360,7 +360,7 @@ int main()
     std::cout << "\nあらかじめソートされたデータを計測中...\n";
     check_performance(Checktype::SORT, ofssort);
 
-    std::cout << "\n最初の1_4だけソートされたデータを計測中...\n";
+    std::cout << "\n最初の1/4だけソートされたデータを計測中...\n";
     check_performance(Checktype::QUARTERSORT, ofsquartersort);
 
     return 0;
@@ -373,13 +373,13 @@ namespace {
         ofs.write(reinterpret_cast<const char *>(bom.data()), sizeof(bom));
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,OpenMP,TBB,Cilk,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif defined(_MSC_VER)
-        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,TBB,tbb::parallel_sort,std::sort (Parallelism TS) VC内蔵,std::sort (Parallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (MSVC内蔵のParallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif _OPENMP < 200805
-        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,TBB,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
 #else
-        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,OpenMP,TBB,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
 #endif
 
         // ランダムデバイス
@@ -441,7 +441,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
+                    //boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -456,7 +456,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
+                    //boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -471,7 +471,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
+                    //boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
