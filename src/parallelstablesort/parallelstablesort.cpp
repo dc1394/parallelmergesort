@@ -5,31 +5,40 @@
 	This software is released under the BSD 2-Clause License.
 */
 
-#include <algorithm>				// for std::inplace_merge, std::stable_sort
-#include <chrono>					// for std::chrono
-#include <cstdint>					// for std::int32_t
-#include <fstream>					// for std::ofstream
-#include <iostream>					// for std::cout, std::cerr
-#include <iterator>                 // for std::distance
-#include <random>					// for std::mt19937, std::random_device
-#include <thread>					// for std::thread
-#include <utility>					// for std::make_pair, std::pair
-#include <vector>					// for std::vector
+#include <algorithm>				                // for std::inplace_merge, std::stable_sort
+#include <chrono>					                // for std::chrono
+#include <cstdint>					                // for std::int32_t
 
-#if __INTEL_COMPILER >= 18
-#include <pstl/algorithm>
-#include <pstl/execution>			// for std::execution::par_unseq
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+    #include <execution>                            // for std::execution
 #endif
 
-#include <boost/assert.hpp>			// for boost::assert
-#include <boost/format.hpp>			// for boost::format
-#include <boost/thread.hpp>         // for boost::thread::physical_concurrency
+#include <fstream>					                // for std::ifstream, std::ofstream
+#include <iostream>					                // for std::cout, std::cerr
+#include <iterator>                                 // for std::distance
+#include <random>					                // for std::mt19937, std::random_device
+#include <thread>					                // for std::thread
+#include <utility>					                // for std::make_pair, std::pair
+#include <vector>					                // for std::vector
+
+#include <boost/archive/text_iarchive.hpp>          // for boost::archive::text_iarchive
+#include <boost/assert.hpp>                         // for boost::assert
+#include <boost/filesystem/path.hpp>                // for boost::filesystem
+#include <boost/format.hpp>                         // for boost::format
+#include <boost/process.hpp>                        // for boost::process
+#include <boost/serialization/serialization.hpp>    // for boost::serialization
+#include <boost/serialization/utility.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/thread.hpp>                         // for boost::thread
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-#include <cilk/cilk.h>				// for cilk_spawn, cilk_sync
+    #include <cilk/cilk.h>                          // for cilk_spawn, cilk_sync
 #endif
 
-#include <tbb/parallel_invoke.h>	// for tbb::parallel_invoke
+#include <pstl/algorithm>
+#include <pstl/execution>			                // for std::execution::par_unseq
+
+#include <tbb/parallel_invoke.h>                    // for tbb::parallel_invoke
 
 namespace {
     // #region 型エイリアス
@@ -89,7 +98,7 @@ namespace {
         \param ofs 出力用のファイルストリーム
         \param randengine 乱数生成エンジン
     */
-    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine);
+    void elapsed_time(Checktype checktype, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs);
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
     template < class RandomIter >
@@ -360,7 +369,18 @@ int main()
 namespace {
     void check_performance(Checktype checktype, std::ofstream & ofs)
     {
-        ofs << "配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallelism TS)\n";
+        std::array< std::uint8_t, 3 > const bom = { 0xEF, 0xBB, 0xBF };
+        ofs.write(reinterpret_cast<const char *>(bom.data()), sizeof(bom));
+
+#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,OpenMP,TBB,Cilk,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+#elif defined(_MSC_VER)
+        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,TBB,tbb::parallel_sort,std::sort (Parallelism TS) VC内蔵,std::sort (Parallelism TS)\n";
+#elif _OPENMP < 200805
+        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,TBB,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+#else
+        ofs << u8"配列の要素数,std::sort,クイックソート,std::thread,OpenMP,TBB,tbb::parallel_sort,std::sort (Parallelism TS)\n";
+#endif
 
         // ランダムデバイス
         std::random_device rnd;
@@ -373,25 +393,26 @@ namespace {
             for (auto j = 0; j < 2; j++) {
                 std::cout << n << "個を計測中...\n";
 
-                std::uniform_int_distribution<std::int32_t> distribution(1, n / 10);
-
                 ofs << n << ',';
 
-                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs, randengine);
-                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_thread(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, [](auto & vec) { std::stable_sort(vec.begin(), vec.end()); }, n, ofs);
+                elapsed_time(checktype, [](auto & vec) { stable_sort_thread(vec.begin(), vec.end()); }, n, ofs);
 
 #if _OPENMP >= 200805
-                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_openmp(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, [](auto & vec) { stable_sort_openmp(vec.begin(), vec.end()); }, n, ofs);
 #endif
-                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs);
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-                elapsed_time(checktype, distribution, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs, randengine);
+                elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
-#if __INTEL_COMPILER >= 18
-                elapsed_time(checktype, distribution, [](auto & vec) { std::stable_sort(pstl::execution::par, vec.begin(), vec.end()); }, n, ofs, randengine);
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+                elapsed_time(checktype, [](auto & vec) { std::sort(std::execution::par, vec.begin(), vec.end()); }, n, ofs);
 #endif
+
+                elapsed_time(checktype, [](auto & vec) { std::stable_sort(pstl::execution::par, vec.begin(), vec.end()); }, n, ofs);
+
                 ofs << std::endl;
 
                 if (i == 6) {
@@ -406,43 +427,66 @@ namespace {
         }
     }
 
-    void elapsed_time(Checktype checktype, std::uniform_int_distribution<std::int32_t> & distribution, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs, std::mt19937 & randengine)
+    void elapsed_time(Checktype checktype, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs)
     {
         using namespace std::chrono;
 
         std::vector<mypair> vec(n);
+        auto const path = boost::filesystem::current_path() / "makestablesortdata";
+
+        switch (checktype) {
+        case Checktype::RANDOM:
+            {
+                auto const filename = (boost::format("sortdata_%d_rand.dat") % n).str();
+                std::ifstream ifs(filename);
+
+                if (!ifs.is_open()) {
+                    boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
+                    ifs.open(filename);
+                }
+
+                boost::archive::text_iarchive ia(ifs);
+                ia >> vec;
+            }
+            break;
+
+        case Checktype::SORT:
+            {
+                auto const filename = (boost::format("sortdata_%d_already.dat") % n).str();
+                std::ifstream ifs(filename);
+
+                if (!ifs.is_open()) {
+                    boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
+                    ifs.open(filename);
+                }
+
+                boost::archive::text_iarchive ia(ifs);
+                ia >> vec;
+            }
+            break;
+
+        case Checktype::QUARTERSORT:
+            {
+                auto const filename = (boost::format("sortdata_%d_quartersort.dat") % n).str();
+                std::ifstream ifs(filename);
+
+                if (!ifs.is_open()) {
+                    boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
+                    ifs.open(filename);
+                }
+
+                boost::archive::text_iarchive ia(ifs);
+                ia >> vec;
+            }
+            break;
+
+        default:
+            BOOST_ASSERT(!"switchのdefaultに来てしまった！");
+            break;
+        }
 
         auto elapsed_time = 0.0;
         for (auto i = 1; i <= CHECKLOOP; i++) {
-            for (auto j = 0; j < n; j++) {
-                vec[j] = std::make_pair(distribution(randengine), j);
-            }
-
-            switch (checktype) {
-            case Checktype::RANDOM:
-                break;
-
-            case Checktype::SORT:
-#if __INTEL_COMPILER >= 18
-                std::stable_sort(pstl::execution::par_unseq, vec.begin(), vec.end());
-#else
-                std::stable_sort(vec.begin(), vec.end());
-#endif
-                break;
-
-            case Checktype::QUARTERSORT:
-#if __INTEL_COMPILER >= 18
-                std::stable_sort(pstl::execution::par_unseq, vec.begin(), vec.begin() + n / 4);
-#else
-                std::stable_sort(vec.begin(), vec.begin() + n / 4);
-#endif
-                break;
-
-            default:
-                BOOST_ASSERT(!"switchのdefaultに来てしまった！");
-                break;
-            }
-            
             auto const beg = high_resolution_clock::now();
             func(vec);
             auto const end = high_resolution_clock::now();
@@ -450,17 +494,12 @@ namespace {
             elapsed_time += (duration_cast<duration<double>>(end - beg)).count();
         }
 
-        ofs << boost::format("%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
-
+        ofs << boost::format(u8"%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
 
 #ifdef DEBUG
-        std::vector<mypair> vecback(vec);
+        std::vector< mypair > vecback(vec);
 
-#if __INTEL_COMPILER >= 18
-            std::stable_sort(pstl::execution::par_unseq, vecback.begin(), vecback.end());
-#else
-            std::stable_sort(vecback.begin(), vecback.end());
-#endif
+        std::stable_sort(pstl::execution::par_unseq, vecback.begin(), vecback.end());
 
         if (!vec_check(vec, vecback)) {
             std::cerr << "エラー発見！" << std::endl;
