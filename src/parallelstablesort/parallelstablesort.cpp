@@ -31,21 +31,19 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/thread.hpp>                         // for boost::thread
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
     #include <cilk/cilk.h>                          // for cilk_spawn, cilk_sync
 #endif
 
 #include <pstl/algorithm>
-#include <pstl/execution>			                // for std::execution::par_unseq
+#include <pstl/execution>			                // for pstl::execution::par_unseq
 
 #include <tbb/parallel_invoke.h>                    // for tbb::parallel_invoke
 
 namespace {
-    // #region 型エイリアス
+    // 型エイリアス
 
     using mypair = std::pair<std::int32_t, std::int32_t>;
-
-    // #endregion 型エイリアス
 
     //! A enumerated type
     /*!
@@ -403,7 +401,7 @@ namespace {
 #endif
                 elapsed_time(checktype, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs);
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && < __GNUC__ < 8)
                 elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
