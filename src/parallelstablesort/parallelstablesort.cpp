@@ -16,19 +16,18 @@
 #include <fstream>					                // for std::ifstream, std::ofstream
 #include <iostream>					                // for std::cout, std::cerr
 #include <iterator>                                 // for std::distance
-#include <random>					                // for std::mt19937, std::random_device
 #include <thread>					                // for std::thread
 #include <utility>					                // for std::make_pair, std::pair
 #include <vector>					                // for std::vector
 
 #include <boost/archive/text_iarchive.hpp>          // for boost::archive::text_iarchive
-#include <boost/assert.hpp>                         // for boost::assert
 #include <boost/filesystem.hpp>                     // for boost::filesystem
 #include <boost/format.hpp>                         // for boost::format
-//#include <boost/process.hpp>                        // for boost::process
-#include <boost/serialization/serialization.hpp>    // for boost::serialization
-#include <boost/serialization/utility.hpp>
-#include <boost/serialization/vector.hpp>
+#include <boost/process.hpp>                        // for boost::process
+// ReSharper disable once CppUnusedIncludeDirective
+#include <boost/serialization/utility.hpp>          // for boost::serialization::access
+// ReSharper disable once CppUnusedIncludeDirective
+#include <boost/serialization/vector.hpp>           // for boost::serialization::access
 #include <boost/thread.hpp>                         // for boost::thread
 
 #if defined(__INTEL_COMPILER) || __GNUC__ >= 5
@@ -92,11 +91,9 @@ namespace {
     /*!
         引数で与えられたstd::functionの実行時間をファイルに出力する
         \param checktype パフォーマンスをチェックする際の対象配列の種類
-        \param distribution 乱数の分布
         \param func 実行するstd::function
         \param n 配列のサイス
         \param ofs 出力用のファイルストリーム
-        \param randengine 乱数生成エンジン
     */
     void elapsed_time(Checktype checktype, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs);
 
@@ -382,12 +379,6 @@ namespace {
         ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
 #endif
 
-        // ランダムデバイス
-        std::random_device rnd;
-        
-        // 乱数エンジン
-        auto randengine = std::mt19937(rnd());
-
         auto n = N;
         for (auto i = 0; i < 7; i++) {
             for (auto j = 0; j < 2; j++) {
@@ -441,7 +432,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    //boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
+                    boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -456,7 +447,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    //boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
+                    boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -471,7 +462,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    //boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
+                    boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
