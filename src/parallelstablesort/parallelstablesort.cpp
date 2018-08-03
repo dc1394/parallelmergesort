@@ -30,21 +30,19 @@
 #include <boost/serialization/vector.hpp>           // for boost::serialization::access
 #include <boost/thread.hpp>                         // for boost::thread
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
     #include <cilk/cilk.h>                          // for cilk_spawn, cilk_sync
 #endif
 
 #include <pstl/algorithm>
-#include <pstl/execution>			                // for std::execution::par_unseq
+#include <pstl/execution>			                // for pstl::execution::par_unseq
 
 #include <tbb/parallel_invoke.h>                    // for tbb::parallel_invoke
 
 namespace {
-    // #region 型エイリアス
+    // 型エイリアス
 
     using mypair = std::pair<std::int32_t, std::int32_t>;
-
-    // #endregion 型エイリアス
 
     //! A enumerated type
     /*!
@@ -394,7 +392,7 @@ namespace {
 #endif
                 elapsed_time(checktype, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs);
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && < __GNUC__ < 8)
                 elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
@@ -422,7 +420,7 @@ namespace {
     {
         using namespace std::chrono;
 
-        std::vector<mypair> vec(n);
+        std::vector< mypair > vec(n);
         auto const path = boost::filesystem::current_path() / "makestablesortdata";
 
         switch (checktype) {
@@ -476,6 +474,10 @@ namespace {
             break;
         }
 
+#ifdef DEBUG
+        std::vector< mypair > vecback(vec);
+#endif
+
         auto elapsed_time = 0.0;
         for (auto i = 1; i <= CHECKLOOP; i++) {
             auto const beg = high_resolution_clock::now();
@@ -488,8 +490,6 @@ namespace {
         ofs << boost::format(u8"%.10f") % (elapsed_time / static_cast<double>(CHECKLOOP)) << ',';
 
 #ifdef DEBUG
-        std::vector< mypair > vecback(vec);
-
         std::stable_sort(pstl::execution::par_unseq, vecback.begin(), vecback.end());
 
         if (!vec_check(vec, vecback)) {
