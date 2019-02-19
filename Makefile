@@ -12,9 +12,9 @@ DEPS2 = makestablesortdata.d
 
 VPATH  = src/parallelstablesort src/makestablesortdata
 CXX = icpc
-CXXFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe -std=c++14 -fopenmp
-LDFLAGS = -L/home/dc1394/oss/tbb2018_20180411oss/lib/intel64/gcc4.7 -ltbb \
-		  -L/home/dc1394/oss/boost_1_67_0/stage/icc/lib \
+CXXFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe -std=c++17 -fopenmp
+LDFLAGS = -ltbb \
+		  -L/home/dc1394/oss/boost_1_69_0/stage/icc/lib \
 		  -lboost_filesystem -lboost_serialization -lboost_system -lboost_thread
 
 all: $(PROG) $(PROG2) ;

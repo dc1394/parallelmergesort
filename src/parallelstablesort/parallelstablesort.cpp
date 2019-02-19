@@ -392,7 +392,7 @@ namespace {
 #endif
                 elapsed_time(checktype, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs);
 
-#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && < __GNUC__ < 8)
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
                 elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
