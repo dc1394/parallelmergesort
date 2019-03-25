@@ -94,7 +94,7 @@ namespace {
         auto randengine = std::mt19937(rnd());
 
         // 乱数の分布（1～n / 10までの一様分布）
-        std::uniform_int_distribution<std::int32_t> const distribution(1, n / 10);
+        std::uniform_int_distribution<std::int32_t> distribution(1, n / 10);
 
 		std::vector< mypair > vec(n);
         for (auto j = 0; j < n; j++) {
