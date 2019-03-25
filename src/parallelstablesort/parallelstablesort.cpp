@@ -119,7 +119,7 @@ namespace {
 
         // 現在の再帰の深さが閾値以下のときだけ並列化させる
         if (reci <= THRESHOLD) {
-            auto middle = first + len / 2;
+            auto const middle = first + len / 2;
 
             // 下部をソート（別スレッドで実行）
             cilk_spawn stable_sort_cilk(first, middle, reci);
@@ -177,7 +177,7 @@ namespace {
 
         // 現在の再帰の深さが閾値以下のときだけ並列化させる
         if (reci <= THRESHOLD) {
-            auto middle = first + len / 2;
+            auto const middle = first + len / 2;
 
             // 次の関数をタスクとして実行
 #pragma omp task
@@ -240,7 +240,7 @@ namespace {
 
         // 現在の再帰の深さが閾値以下のときだけ並列化させる
         if (reci <= THRESHOLD) {
-            auto middle = first + len / 2;
+            auto const middle = first + len / 2;
 
             // 二つのラムダ式を別スレッドで実行
             tbb::parallel_invoke(
@@ -392,7 +392,7 @@ namespace {
 #endif
                 elapsed_time(checktype, [](auto & vec) { stable_sort_tbb(vec.begin(), vec.end()); }, n, ofs);
 
-#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && < __GNUC__ < 8)
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
                 elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
