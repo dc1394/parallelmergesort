@@ -14,7 +14,7 @@ VPATH  = src/parallelstablesort src/makestablesortdata
 CXX = icpc
 CXXFLAGS = -Wall -Wextra -O3 -xHOST -ipo -pipe -std=c++17 -fopenmp
 LDFLAGS = -ltbb \
-		  -L/home/dc1394/oss/boost_1_69_0/stage/icc/lib \
+		  -L/home/dc1394/oss/boost_1_72_0/stage/icc/lib \
 		  -lboost_filesystem -lboost_serialization -lboost_system -lboost_thread
 
 all: $(PROG) $(PROG2) ;
