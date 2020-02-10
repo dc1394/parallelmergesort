@@ -8,11 +8,9 @@
 #include <algorithm>				                // for std::inplace_merge, std::stable_sort
 #include <chrono>					                // for std::chrono
 #include <cstdint>					                // for std::int32_t
-
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#ifndef __clang__
     #include <execution>                            // for std::execution
 #endif
-
 #include <fstream>					                // for std::ifstream, std::ofstream
 #include <iostream>					                // for std::cout, std::cerr
 #include <iterator>                                 // for std::distance
@@ -95,7 +93,7 @@ namespace {
     */
     void elapsed_time(Checktype checktype, std::function<void(std::vector<mypair> &)> const & func, std::int32_t n, std::ofstream & ofs);
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
     template < class RandomIter >
     //! A template function.
     /*!
@@ -364,17 +362,21 @@ int main()
 namespace {
     void check_performance(Checktype checktype, std::ofstream & ofs)
     {
+#ifdef _MSC_VER
         std::array< std::uint8_t, 3 > const bom = { 0xEF, 0xBB, 0xBF };
         ofs.write(reinterpret_cast<const char *>(bom.data()), sizeof(bom));
+#endif
 
-#if defined(__INTEL_COMPILER) || __GNUC__ >= 5
-        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,Cilk,std::stable_sort (Parallel STLのParallelism TS)\n";
+#if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,CilkPlus,std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif defined(_MSC_VER)
-        ofs << u8"配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (MSVC内蔵のParallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
+        ofs << "配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (MSVC内蔵のParallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif _OPENMP < 200805
         ofs << u8"配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
-#else
+#elif __clang__
         ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
+#else
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort(Parallelism TS), std::stable_sort (Parallel STLのParallelism TS)\n";
 #endif
 
         auto n = N;
@@ -396,7 +398,7 @@ namespace {
                 elapsed_time(checktype, [](auto & vec) { stable_sort_cilk(vec.begin(), vec.end()); }, n, ofs);
 #endif
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#ifndef __clang__
                 elapsed_time(checktype, [](auto & vec) { std::sort(std::execution::par, vec.begin(), vec.end()); }, n, ofs);
 #endif
 
