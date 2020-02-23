@@ -13,9 +13,9 @@ DEPS2 = makestablesortdata.d
 VPATH  = src/parallelstablesort src/makestablesortdata
 CXX = g++
 CXXFLAGS = -Wall -Wextra -O3 -mtune=native -march=native -pipe -std=c++17 -fopenmp
-LDFLAGS = -ltbb \
-		  -L/home/dc1394/oss/boost_1_72_0/stage/icc/lib \
-		  -lboost_filesystem -lboost_serialization -lboost_system -lboost_thread
+LDFLAGS = -L/home/dc1394/oss/tbb/lib/intel64/gcc4.8 -ltbb \
+		  -L/home/dc1394/oss/boost_1_72_0/stage/gcc/lib \
+		  -lboost_serialization -lboost_system -lboost_thread
 
 all: $(PROG) $(PROG2) ;
 #rm -f $(OBJS) $(DEPS)

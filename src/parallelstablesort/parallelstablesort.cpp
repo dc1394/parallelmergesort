@@ -19,7 +19,6 @@
 #include <vector>					                // for std::vector
 
 #include <boost/archive/text_iarchive.hpp>          // for boost::archive::text_iarchive
-#include <boost/filesystem.hpp>                     // for boost::filesystem
 #include <boost/format.hpp>                         // for boost::format
 #include <boost/process.hpp>                        // for boost::process
 // ReSharper disable once CppUnusedIncludeDirective
@@ -362,13 +361,13 @@ int main()
 namespace {
     void check_performance(Checktype checktype, std::ofstream & ofs)
     {
-#ifdef _MSC_VER
+#ifndef _MSC_VER
         std::array< std::uint8_t, 3 > const bom = { 0xEF, 0xBB, 0xBF };
         ofs.write(reinterpret_cast<const char *>(bom.data()), sizeof(bom));
 #endif
 
 #if defined(__INTEL_COMPILER) || (__GNUC__ >= 5 && __GNUC__ < 8)
-        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,CilkPlus,std::stable_sort (Parallel STLのParallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,CilkPlus,std::stable_sort (Parallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif defined(_MSC_VER)
         ofs << "配列の要素数,std::stable_sort,std::thread,TBB,std::stable_sort (MSVC内蔵のParallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
 #elif _OPENMP < 200805
@@ -376,7 +375,7 @@ namespace {
 #elif __clang__
         ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort (Parallel STLのParallelism TS)\n";
 #else
-        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort(Parallelism TS), std::stable_sort (Parallel STLのParallelism TS)\n";
+        ofs << u8"配列の要素数,std::stable_sort,std::thread,OpenMP,TBB,std::stable_sort (Parallelism TS),std::stable_sort (Parallel STLのParallelism TS)\n";
 #endif
 
         auto n = N;
@@ -423,7 +422,7 @@ namespace {
         using namespace std::chrono;
 
         std::vector< mypair > vec(n);
-        auto const path = boost::filesystem::current_path() / "makestablesortdata";
+        auto const program_name = "makestablesortdata";
 
         switch (checktype) {
         case Checktype::RANDOM:
@@ -432,7 +431,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 0 %d") % n).str()).wait();
+                    boost::process::child(program_name + (boost::format(" 0 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -447,7 +446,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 1 %d") % n).str()).wait();
+                    boost::process::child(program_name + (boost::format(" 1 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
@@ -462,7 +461,7 @@ namespace {
                 std::ifstream ifs(filename);
 
                 if (!ifs.is_open()) {
-                    boost::process::child(path.string() + (boost::format(" 2 %d") % n).str()).wait();
+                    boost::process::child(program_name + (boost::format(" 2 %d") % n).str()).wait();
                     ifs.open(filename);
                 }
 
